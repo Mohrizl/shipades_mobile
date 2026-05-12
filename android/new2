@@ -1,0 +1,81 @@
+from default_api import write_file
+
+write_file(
+    absolutePath="D:/sipades_mobile/lib/services/auth_service.dart",
+    text="""import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
+import '../models/user_model.dart';
+
+class AuthService {
+  static Future<Map<String, dynamic>> login(String email, String password) async {
+    try {
+      final res = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      ).timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(res.body);
+      
+      if (data['success'] == true) {
+        final prefs = await SharedPreferences.getInstance();
+        
+        // Perbaikan: Cek dulu apakah token dan user ada, jangan langsung simpan
+        if (data['token'] != null) {
+          await prefs.setString('token', data['token'].toString());
+        }
+        
+        if (data['user'] != null) {
+          await prefs.setString('user', jsonEncode(data['user']));
+        }
+      }
+      return data;
+    } catch (e) {
+      print("Error Login: $e");
+      return {
+        'success': false,
+        'message': 'Gagal terhubung ke server: $e'
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> register(Map<String, dynamic> body) async {
+    try {
+      final res = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(res.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  static Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
+  static Future<UserModel?> getUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userStr = prefs.getString('user');
+    if (userStr == null) return null;
+    return UserModel.fromJson(jsonDecode(userStr));
+  }
+
+  static Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('user');
+  }
+
+  static Future<bool> isLoggedIn() async {
+    final token = await getToken();
+    return token != null;
+  }
+}
+"""
+)

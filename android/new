@@ -1,0 +1,46 @@
+import json
+from default_api import replace_file_content
+
+# Menambahkan try-catch dan timeout di auth_service.dart
+replace_file_content(
+    absolutePath="D:/sipades_mobile/lib/services/auth_service.dart",
+    replacementChunk={
+        "targetContent": """  static Future<Map<String, dynamic>> login(String email, String password) async {
+    final res = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+    final data = jsonDecode(res.body);
+    if (data['success'] == true) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', data['token']);
+      await prefs.setString('user', jsonEncode(data['user']));
+    }
+    return data;
+  }""",
+        "replacementContent": """  static Future<Map<String, dynamic>> login(String email, String password) async {
+    try {
+      final res = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      ).timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(res.body);
+      if (data['success'] == true) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']);
+        await prefs.setString('user', jsonEncode(data['user']));
+      }
+      return data;
+    } catch (e) {
+      print("Error Login: $e");
+      return {
+        'success': false,
+        'message': 'Gagal terhubung ke server. Pastikan Anda di jaringan yang sama.'
+      };
+    }
+  }"""
+    }
+)
