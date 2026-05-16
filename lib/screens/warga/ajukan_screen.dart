@@ -42,8 +42,81 @@ class _AjukanScreenState extends State<AjukanScreen> {
   }
 
   Future<void> _pickKtp() async {
-    final img = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 50);
-    if (img != null) setState(() => _fotoKtp = File(img.path));
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Pilih Sumber Foto',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildPickerOption(
+                  icon: Icons.camera_alt_rounded,
+                  label: 'Kamera',
+                  onTap: () => _handlePick(ImageSource.camera),
+                  color: Colors.blue,
+                ),
+                _buildPickerOption(
+                  icon: Icons.photo_library_rounded,
+                  label: 'Galeri',
+                  onTap: () => _handlePick(ImageSource.gallery),
+                  color: Colors.orange,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPickerOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 32),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handlePick(ImageSource source) async {
+    final img = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 50,
+    );
+    if (img != null) {
+      setState(() => _fotoKtp = File(img.path));
+    }
   }
 
   Future<void> _pickDokumen() async {
